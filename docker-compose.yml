@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  # MQTT Broker Service (Mosquitto)
+  mqtt-broker:
+    image: eclipse-mosquitto:latest
+    container_name: mqtt_broker
+    ports:
+      - "1883:1883"      # MQTT Port
+      - "9001:9001"      # WebSocket Port (optional)
+    volumes:
+      - ./mosquitto/config:/mosquitto/config      # Custom Mosquitto config
+      - ./mosquitto/data:/mosquitto/data          # Persistence data (optional)
+      - ./mosquitto/log:/mosquitto/log            # Logs (optional)
+    environment:
+      - MQTT_USERNAME=admin
+      - MQTT_PASSWORD=admin
+    restart: unless-stopped
+
+  # Django Application Service
+  django-app:
+    build: .
+    container_name: django_app
+    command: >
+       sh -c "python manage.py makemigrations && python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+    depends_on:
+      - mqtt-broker    # Ensure MQTT Broker is running before the Django app
+    restart: unless-stopped
+
+  # Django MQTT Listener Service
+  mqtt-listener:
+    build: .
+    container_name: mqtt_listener
+    command: >
+      sh -c "python manage.py mqtt_listener"
+    volumes:
+      - .:/app
+    depends_on:
+      - mqtt-broker    # Ensure MQTT Broker is running before the listener
+    restart: unless-stopped

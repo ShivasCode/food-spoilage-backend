@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sensor Data Email</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f9f9f9;
+            padding: 20px;
+            color: #333;
+            margin: 0;
+            line-height: 1.5;
+        }
+        .container {
+            max-width: 600px;
+            margin: auto;
+            background: #ffffff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        h2 {
+            color: #4CAF50;
+            margin-bottom: 10px;
+        }
+        p {
+            margin: 0 0 15px;
+        }
+        .footer {
+            margin-top: 20px;
+            font-size: 0.9em;
+            color: #777;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Sensor Data Report</h2>
+        <p>Dear {{ username }},</p>
+        <p>You have requested the sensor data for your <strong>{{ food_type }}</strong> monitoring group (ID: <strong>{{ monitoring_group_id }}</strong>).</p>
+        <p>The sensor data has been compiled into a CSV file attached to this email for your convenience.</p>
+        
+        <p>Thank you for using our monitoring system!</p>
+        <div class="footer">
+            <p>This is an automated message. Please do not reply.</p>
+        </div>
+    </div>
+</body>
+</html>

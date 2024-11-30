@@ -32,13 +32,13 @@ services:
     restart: unless-stopped
 
   # Django MQTT Listener Service
-  mqtt-listener:
-    build: .
-    container_name: mqtt_listener
-    command: >
-      sh -c "python manage.py mqtt_listener"
-    volumes:
-      - .:/app
-    depends_on:
-      - mqtt-broker    # Ensure MQTT Broker is running before the listener
-    restart: unless-stopped
+  # mqtt-listener:
+  #   build: .
+  #   container_name: mqtt_listener
+  #   command: >
+  #     sh -c "python manage.py mqtt_listener"
+  #   volumes:
+  #     - .:/app
+  #   depends_on:
+  #     - mqtt-broker    # Ensure MQTT Broker is running before the listener
+  #   restart: unless-stopped

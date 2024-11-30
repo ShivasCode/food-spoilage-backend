@@ -19,6 +19,9 @@ class UserLoginView(APIView):
         user = authenticate(username=request.data['username'], password=request.data['password'])
         if user:
             token, created = Token.objects.get_or_create(user=user)
-            return Response({'token': token.key})
+            return Response({
+                'token': token.key,
+                'username': user.username
+            })
         else:
             return Response({'error': 'Invalid credentials'}, status=401)

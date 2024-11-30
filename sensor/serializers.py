@@ -74,3 +74,14 @@ class NotificationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Notification
         fields = ['id', 'user', 'monitoring_group', 'message', 'timestamp', 'read']
+    
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        
+        # Format the 'timestamp' field
+        if instance.timestamp:
+            representation['timestamp'] = timezone.localtime(instance.timestamp).strftime("%B %d, %Y, %I:%M %p")
+        else:
+            representation['timestamp'] = None
+        
+        return representation

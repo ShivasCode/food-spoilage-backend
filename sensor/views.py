@@ -4,6 +4,7 @@ from sensor.serializers import MonitoringGroupSerializer, MonitoringGroupDetailS
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.decorators import api_view
 
 
 import pandas as pd
@@ -220,3 +221,52 @@ class UnreadWarningNotificationsListView(generics.ListAPIView):
             read=False,
             message__startswith="Warning:"
         )
+    
+class NotificationListAPIView(generics.ListAPIView):
+    serializer_class = NotificationSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        # Filter notifications for the logged-in user
+        return Notification.objects.filter(user=self.request.user).order_by('-timestamp')
+
+@api_view(['PATCH'])
+def mark_notification_as_read(request, pk):
+    try:
+        notification = Notification.objects.get(pk=pk, user=request.user)
+        notification.read = True
+        notification.save()
+        return Response({"message": "Notification marked as read"})
+    except Notification.DoesNotExist:
+        return Response({"message": "Notification not found"}, status=404)
+    
+
+@api_view(['DELETE'])
+def delete_all_read_notifications(request):
+    """
+    Delete all read notifications for the authenticated user.
+    """
+    if not request.user.is_authenticated:
+        return Response({"message": "Authentication required"}, status=401)
+
+    # Filter and delete all notifications that are read for the current user
+    notifications = Notification.objects.filter(user=request.user, read=True)
+
+    # Get the count of deleted notifications
+    deleted_count, _ = notifications.delete()
+
+    # Return a response indicating how many notifications were deleted
+    return Response({"message": f"{deleted_count} read notifications deleted."}, status=200)
+
+from rest_framework.views import APIView
+
+
+class UnreadNotificationCountView(APIView):
+    permission_classes = [IsAuthenticated]  # Only authenticated users can access this API
+
+    def get(self, request):
+        # Check if the user has unread notifications
+        unread_exists = Notification.objects.filter(user=request.user, read=False).exists()
+
+        # Return a boolean indicating if there are unread notifications
+        return Response({'unread_notifications': unread_exists})

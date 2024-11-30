@@ -4,11 +4,6 @@ from user.models import CustomUser
 from django.utils import timezone
 
 
-
-
-
-
-
 class MonitoringGroup(models.Model):
     FOOD_CHOICES = [
         ('menudo', 'Menudo'),
@@ -50,7 +45,7 @@ class SensorData(models.Model):
     timestamp = models.DateTimeField()
     food_type = models.CharField(max_length=50, choices=FOOD_CHOICES, null=True)
     spoilage_status = models.CharField(max_length=50, choices=SPOILAGE_STATUS_CHOICES, default='food_is_fresh')
-    
+    reason_of_spoilage = models.CharField(max_length=255, null=True, blank=True)
     def __str__(self):
         # Access the monitoring group associated with this sensor data
         if self.monitoring_group:

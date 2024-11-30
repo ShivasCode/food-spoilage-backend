@@ -1,5 +1,9 @@
 from django.urls import path
-from sensor.views import MonitoringGroupListView, MonitoringGroupDetailView, MonitoringGroupCSVExportView, NotificationUpdateView, LatestSensorDataView, EndMonitoringView,SensorDataCreateAPIView, UnreadNotificationsListView, UnreadWarningNotificationsListView
+from sensor.views import (MonitoringGroupListView, MonitoringGroupDetailView, 
+                          MonitoringGroupCSVExportView, NotificationUpdateView, LatestSensorDataView, 
+                          EndMonitoringView,SensorDataCreateAPIView, UnreadNotificationsListView, 
+                          UnreadWarningNotificationsListView, NotificationListAPIView, mark_notification_as_read, delete_all_read_notifications,
+                          UnreadNotificationCountView)
 
 urlpatterns = [
 
@@ -17,5 +21,9 @@ urlpatterns = [
 
     path('notifications/unread/', UnreadNotificationsListView.as_view(), name='unread-notifications'),
     path('notifications/warnings/unread/', UnreadWarningNotificationsListView.as_view(), name='unread-notifications'),
+    path('notifications/', NotificationListAPIView.as_view(), name='notification-list'),
+    path('notifications/<int:pk>/read/', mark_notification_as_read, name='mark-notification-read'),
+        path('notifications/read/', delete_all_read_notifications, name='delete-all-read'),
+        path('notifications/unread/count/', UnreadNotificationCountView.as_view(), name='unread-count'),
 
 ]

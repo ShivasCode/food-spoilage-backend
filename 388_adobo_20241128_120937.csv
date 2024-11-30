@@ -1,0 +1,2 @@
+Timestamp,Temperature,Humidity,Methane,Threshold,Food Type,Spoilage Status
+"November 27, 2024, 07:16 PM",35.0,60.2,0.0,,adobo,food_is_fresh

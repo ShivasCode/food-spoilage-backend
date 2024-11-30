@@ -1,0 +1,2 @@
+Timestamp,Temperature,Humidity,Methane,Threshold,Food Type,Spoilage Status
+"November 29, 2024, 06:47 AM",22.5,55.0,300.0,1,menudo,food_is_spoiled

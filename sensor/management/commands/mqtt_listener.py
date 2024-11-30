@@ -17,7 +17,7 @@ class Command(BaseCommand):
     help = 'Starts the MQTT listener'
     
     def handle(self, *args, **kwargs):
-        mqtt_broker = '192.168.55.109'
+        mqtt_broker = '192.168.55.100'
         mqtt_port = 1883
         mqtt_user = 'admin'
         mqtt_pass = 'admin'

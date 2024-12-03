@@ -9,6 +9,7 @@ class MonitoringGroup(models.Model):
         ('menudo', 'Menudo'),
         ('adobo', 'Adobo'),
         ('mechado', 'Mechado'),
+        ('general', 'General')
     ]
     
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='monitoring_groups')

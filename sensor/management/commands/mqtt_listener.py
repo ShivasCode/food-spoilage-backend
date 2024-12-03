@@ -146,7 +146,7 @@ class Command(BaseCommand):
                         monitoring_group.end_time = timezone.now()
                         
                         if not monitoring_group.email_notification_sent:
-                            # send_spoilage_notification(user, food_type, monitoring_group.id, monitoring_group.start_time, monitoring_group.end_time)
+                            send_spoilage_notification(user, food_type, monitoring_group.id, monitoring_group.start_time, monitoring_group.end_time)
                             monitoring_group.email_notification_sent = True  
 
                         if not monitoring_group.phone_notification_sent:

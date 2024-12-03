@@ -270,3 +270,6 @@ class UnreadNotificationCountView(APIView):
 
         # Return a boolean indicating if there are unread notifications
         return Response({'unread_notifications': unread_exists})
+    
+
+

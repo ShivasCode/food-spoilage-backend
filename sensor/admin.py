@@ -1,9 +1,34 @@
 from django.contrib import admin
 from .models import SensorData, MonitoringGroup, Notification
 
+
+class MonitoringGroupIDFilter(admin.SimpleListFilter):
+    title = 'Monitoring Group ID'  # Display title for the filter in the admin panel
+    parameter_name = 'monitoring_group_id'  # Query parameter name
+
+    def lookups(self, request, model_admin):
+        # Return a list of tuples (value, label) for the filter options
+        monitoring_groups = model_admin.model.objects.values_list(
+            'monitoring_group__id', flat=True
+        ).distinct()
+        return [(group_id, str(group_id)) for group_id in monitoring_groups if group_id]
+
+    def queryset(self, request, queryset):
+        # Filter the queryset based on the selected value
+        if self.value():
+            return queryset.filter(monitoring_group__id=self.value())
+        return queryset
+
+
 class SensorDataAdmin(admin.ModelAdmin):
-    list_display = ('id', 'user', 'get_monitoring_group_id', 'temperature', 'humidity', 'methane','ammonia', 'threshold', 'timestamp', 'food_type','display_spoilage_status')
-    list_filter = ('user', 'food_type', 'monitoring_group__is_done', 'timestamp')
+    list_display = (
+        'id', 'user', 'get_monitoring_group_id', 'temperature', 'humidity',
+        'methane', 'ammonia', 'threshold', 'timestamp', 'food_type', 'display_spoilage_status'
+    )
+    list_filter = (
+        'user', 'food_type', 'monitoring_group__is_done', 'timestamp',
+        MonitoringGroupIDFilter  # Add the custom filter here
+    )
     search_fields = ('user__username', 'food_type', 'monitoring_group__id')
     date_hierarchy = 'timestamp'  # Allows for filtering by date
     ordering = ('-timestamp',)  # Order by timestamp descending
@@ -13,13 +38,13 @@ class SensorDataAdmin(admin.ModelAdmin):
             'fields': ('user', 'monitoring_group')
         }),
         ('Sensor Readings', {
-            'fields': ('temperature', 'humidity', 'methane', 'threshold', 'ammonia','food_type','spoilage_status', 'timestamp')
+            'fields': ('temperature', 'humidity', 'methane', 'threshold', 'ammonia', 'food_type', 'spoilage_status', 'timestamp')
         }),
     )
 
     def get_monitoring_group_id(self, obj):
         return obj.monitoring_group.id if obj.monitoring_group else 'N/A'
-    
+
     get_monitoring_group_id.short_description = 'Monitoring Group ID'  # Label for the column in the admin
 
     def display_spoilage_status(self, obj):

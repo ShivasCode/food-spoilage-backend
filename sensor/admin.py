@@ -69,7 +69,7 @@ class MonitoringGroupAdmin(admin.ModelAdmin):
 
     fieldsets = (
         (None, {
-            'fields': ('user', 'food_type', 'start_time', 'end_time', 'is_done','email_notification_sent', 'phone_notification_sent')
+            'fields': ('user', 'food_type', 'start_time', 'end_time', 'is_done','email_notification_sent', 'phone_notification_sent','temperature_notification_sent', 'storage_notification_sent' )
         }),
     )
 

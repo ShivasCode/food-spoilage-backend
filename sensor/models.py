@@ -19,7 +19,10 @@ class MonitoringGroup(models.Model):
     end_time = models.DateTimeField(null=True, blank=True)
     is_done = models.BooleanField(default=False)
     email_notification_sent = models.BooleanField(default=False)  
-    phone_notification_sent = models.BooleanField(default=False)  
+    phone_notification_sent = models.BooleanField(default=False) 
+    temperature_notification_sent = models.BooleanField(default=False)   
+    storage_notification_sent = models.BooleanField(default=False)   
+
 
     def __str__(self):
         return f"{self.food_type} monitoring for {self.user.username} | id: {self.id}"

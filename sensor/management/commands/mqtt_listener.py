@@ -9,6 +9,7 @@ from django.core.mail import EmailMessage
 import requests
 from django.utils import timezone
 from django.utils.timesince import timesince
+from datetime import timedelta
 
 
 
@@ -116,14 +117,24 @@ class Command(BaseCommand):
                     if spoilage_warning_temp == "Food at Risk Due to High Temperature":
                         print('Food at risk due to high temp notification')
                         warning_message = ""
-                        if spoilage_warning_temp != "Temperature is safe":
+                        
+                        if spoilage_warning_temp == "Food at Risk Due to High Temperature":
                             warning_message += f"Warning: {spoilage_warning_temp}. "
-                        # Check if a notification with the same user, monitoring group, and message already exists
-                        if not Notification.objects.filter(
+                        
+                        # Get the current time
+                        current_time = timezone.now()
+                        
+                        # Check if a notification with the same user, monitoring group, and message exists within the last 30 minutes
+                        previous_notification = Notification.objects.filter(
                             user=user,
                             monitoring_group=monitoring_group,
                             message=warning_message.strip()
-                        ).exists():
+                        ).first()
+                        
+                        # If a notification exists and was created less than 30 minutes ago, skip creation
+                        if previous_notification and (current_time - previous_notification.timestamp) < timedelta(minutes=30):
+                            print("Notification suppressed. Less than 30 minutes since the last notification.")
+                        else:
                             # Create a notification for spoilage warnings
                             notification = Notification.objects.create(
                                 user=user,
@@ -139,9 +150,37 @@ class Command(BaseCommand):
                             })
                             client.publish(topic, payload)
                             print(f"Published warning notification for user {user.username}: {warning_message}")
-                        else:
-                            print("Notification already exists, skipping publication.")
+                    if (temperature_status_message == "Food has been exposed to high temperature for over 2 hours. Spoilage risk detected." 
+                            and not monitoring_group.temperature_notification_sent):
+                            # Send email and SMS notifications
+                            
+                            send_temperature_at_risk_email(
+                                user=user,
+                                food_type=food_type,
+                                monitoring_group_id=monitoring_group.id,
+                            )
+                            send_temperature_at_risk_sms(user=user, food_type=food_type)
 
+                            # Mark the notification as sent
+                            monitoring_group.temperature_notification_sent = True
+                            monitoring_group.save()
+                            print(f"Temperature notification sent for monitoring group {monitoring_group.id}.")
+
+                    if (storage_status_message == "Food is at risk due to being stored for over 3 days." 
+                            and not monitoring_group.storage_notification_sent):
+                        # Send email and SMS notifications
+                        send_storage_at_risk_email(
+                            user=user,
+                            food_type=food_type,
+                            monitoring_group_id=monitoring_group.id,
+                        )
+                        send_storage_at_risk_sms(user=user, food_type=food_type)
+
+                        # Mark the notification as sent
+                        monitoring_group.storage_notification_sent = True
+                        monitoring_group.save()
+                        print(f"Storage notification sent for monitoring group {monitoring_group.id}.")
+    
                     # If food is spoiled, update the monitoring group
                     # add here the cause of spoilage
                     if spoilage_status == "food_is_spoiled":
@@ -161,16 +200,6 @@ class Command(BaseCommand):
                             monitoring_group=monitoring_group,
                             message=f"{food_type} has spoiled as of {timezone.now().strftime('%Y-%m-%d %H:%M:%S')}.",
                         )    
-                        topic = f"sensor/notification/{token.key}"
-                        timestamp = timezone.now()  
-                        formatted_timestamp = timestamp.strftime('%B %d, %Y at %I:%M %p') 
-
-                        payload = json.dumps({
-                            "id": notification.id, 
-                            "message": f"{food_type} has spoiled as of {formatted_timestamp}.",
-                        })
-                        client.publish(topic, payload)  
-
                         monitoring_group.save()  
                         print(f"Monitoring group {monitoring_group.id} marked as done for user {user.username}")
 
@@ -195,16 +224,14 @@ class Command(BaseCommand):
 
 
 
-def send_spoilage_notification(user, food_type, monitoring_group_id, start_time, end_time):          
+def send_spoilage_notification(user, food_type, monitoring_group_id):          
     subject = "Spoilage Alert for Your Monitoring Group"                
                       
     # Render the HTML template with context                
     html_message = render_to_string('spoilage_notification_email.html', {                
         'username': user.username,               
         'food_type': food_type,               
-        'monitoring_group_id': monitoring_group_id,               
-        'start_time': start_time,             
-        'end_time': end_time,              
+        'monitoring_group_id': monitoring_group_id,                          
     })             
              
     email = EmailMessage(
@@ -243,3 +270,95 @@ def send_spoilage_sms(user, food_type):
             print(f"Failed to send SMS: {response.status_code} - {response.text} - Response: {response.json()}")
     except Exception as e:
         print(f"An error occurred while sending SMS: {e}")
+
+def send_temperature_at_risk_sms(user, food_type):
+    message = f"Hi {user.username}, your {food_type} has been exposed to high temperatures for over 2 hours. Spoilage risk detected. Please store it in a refrigerator immediately."
+    phone_number = user.phone_number  
+    print(phone_number)
+    print(user)
+
+    url = "https://connect.routee.net/sms"
+    headers = {
+        "Authorization": "Bearer 06f846fb-465c-4f35-8259-709304ae44c6",
+        "Content-Type": "application/json"
+    }
+    payload = {
+        "body": message,
+        "to": phone_number,
+        "from": "LegionTech"
+    }
+
+    try:
+        response = requests.post(url, headers=headers, json=payload)
+        # Print the response data for debugging
+        print(f"Response data: {response.json()}")  # Print the JSON response data
+
+        if response.status_code == 200:
+            print(f"SMS sent successfully to {phone_number} for {user.username}. Response: {response.json()}")
+        else:
+            print(f"Failed to send SMS: {response.status_code} - {response.text} - Response: {response.json()}")
+    except Exception as e:
+        print(f"An error occurred while sending SMS: {e}")
+
+def send_temperature_at_risk_email(user, food_type, monitoring_group_id):          
+    subject = "Temperature Alert: Your Food is at Risk"                
+                      
+    html_message = render_to_string('temperature_risk_notification_email.html', {                
+        'username': user.username,               
+        'food_type': food_type,               
+        'monitoring_group_id': monitoring_group_id,                                  
+    })             
+             
+    email = EmailMessage(
+        subject,
+        html_message,
+        to=[user.email]
+    )
+    email.content_subtype = 'html'  # Send as HTML
+    email.send()
+
+def send_storage_at_risk_email(user, food_type, monitoring_group_id):
+    subject = "Storage Alert: Food Quality at Risk"
+    # Render the HTML template with context
+    html_message = render_to_string('storage_risk_notification.html', {
+        'username': user.username,
+        'food_type': food_type,
+        'monitoring_group_id': monitoring_group_id,
+    })
+    
+    email = EmailMessage(
+        subject,
+        html_message,
+        to=[user.email]
+    )
+    email.content_subtype = 'html'  # Send as HTML
+    email.send()
+
+
+def send_storage_at_risk_sms(user, food_type):
+    message = f"Hi {user.username}, your {food_type} has been stored for over 3 days. Prolonged storage may affect its quality. Please review your storage conditions."
+    phone_number = user.phone_number  
+    url = "https://connect.routee.net/sms"
+    headers = {
+        "Authorization": "Bearer 06f846fb-465c-4f35-8259-709304ae44c6",
+        "Content-Type": "application/json"
+    }
+    payload = {
+        "body": message,
+        "to": phone_number,
+        "from": "LegionTech"
+    }
+
+    try:
+        response = requests.post(url, headers=headers, json=payload)
+        # Print the response data for debugging
+        print(f"Response data: {response.json()}")  # Print the JSON response data
+
+        if response.status_code == 200:
+            print(f"SMS sent successfully to {phone_number} for {user.username}. Response: {response.json()}")
+        else:
+            print(f"Failed to send SMS: {response.status_code} - {response.text} - Response: {response.json()}")
+    except Exception as e:
+        print(f"An error occurred while sending SMS: {e}")
+
+    print(f"SMS sent to {user.phone_number}: {message}")

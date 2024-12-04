@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Temperature Alert Notification</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f9f9f9;
+            padding: 20px;
+            color: #333;
+        }
+        .container {
+            max-width: 600px;
+            margin: auto;
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        h2 {
+            color: #f0ad4e; /* Bootstrap's warning color */
+        }
+        p {
+            line-height: 1.5;
+        }
+        .footer {
+            margin-top: 20px;
+            font-size: 0.8em;
+            color: #777;
+        }
+        .highlight {
+            background-color: #fcf8e3; /* Light yellow */
+            padding: 10px;
+            border-left: 5px solid #f0ad4e; /* Bootstrap's warning color */
+        }
+        .details {
+            margin-top: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 10px;
+            background: #f9f9f9;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Temperature Alert: Your Food is at Risk!</h2>
+        <p>Dear {{ username }},</p>
+        <p>Your food type <strong>{{ food_type }}</strong> (ID: <strong>{{ monitoring_group_id }}</strong>) has been exposed to high temperatures for over 2 hours, posing a spoilage risk.</p>
+        <div class="highlight">
+            <strong>Action Required:</strong>
+            <p>Please transfer the food to a refrigerator immediately to prevent spoilage.</p>
+        </div>
+        <div class="details">
+            <p><strong>Food Type:</strong> {{ food_type }}</p>
+            <p><strong>Monitoring Group ID:</strong> {{ monitoring_group_id }}</p>
+        </div>
+        <p>We recommend closely monitoring the temperature to avoid future risks.</p>
+        <p>Best regards,<br>Your Monitoring System Team</p>
+        <div class="footer">
+            <p>This is an automated message. Please do not reply.</p>
+        </div>
+    </div>
+</body>
+</html>

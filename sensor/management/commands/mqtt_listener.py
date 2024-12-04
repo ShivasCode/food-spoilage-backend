@@ -11,9 +11,11 @@ from django.utils import timezone
 from django.utils.timesince import timesince
 from datetime import timedelta
 
+import os
+API_TOKEN = os.getenv('API_TOKEN')
 
 
-
+print(API_TOKEN)
 class Command(BaseCommand):
     help = 'Starts the MQTT listener'
     
@@ -250,7 +252,7 @@ def send_spoilage_sms(user, food_type):
 
     url = "https://connect.routee.net/sms"
     headers = {
-        "Authorization": "Bearer 06f846fb-465c-4f35-8259-709304ae44c6",
+        "Authorization": f"Bearer {API_TOKEN}",
         "Content-Type": "application/json"
     }
     payload = {
@@ -279,7 +281,7 @@ def send_temperature_at_risk_sms(user, food_type):
 
     url = "https://connect.routee.net/sms"
     headers = {
-        "Authorization": "Bearer 06f846fb-465c-4f35-8259-709304ae44c6",
+        "Authorization": f"Bearer {API_TOKEN}",
         "Content-Type": "application/json"
     }
     payload = {
@@ -340,7 +342,7 @@ def send_storage_at_risk_sms(user, food_type):
     phone_number = user.phone_number  
     url = "https://connect.routee.net/sms"
     headers = {
-        "Authorization": "Bearer 06f846fb-465c-4f35-8259-709304ae44c6",
+        "Authorization": f"Bearer {API_TOKEN}",
         "Content-Type": "application/json"
     }
     payload = {

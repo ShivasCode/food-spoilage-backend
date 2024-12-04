@@ -60,9 +60,11 @@ class Command(BaseCommand):
                     food_type = data.get('food_type')
                     spoilage_status_value = data.get('spoilage_status')
                     spoilage_warning_temp = data.get('spoilage_status_warning_temp', "Temperature is safe")
-                    spoilage_warning_humidity = data.get('spoilage_status_warning_humidity', "Humidity is safe")
                     start_time = timezone.now()
-                    
+                    methane_status_message = data.get('methane_status_message')
+                    ammonia_status_message = data.get('ammonia_status_message')
+                    temperature_status_message = data.get('temperature_status_message')
+                    storage_status_message = data.get('storage_status_message')
                     # Map human-readable spoilage status to internal key
                     spoilage_status_mapping = {
                         "Food is Fresh": "food_is_fresh",
@@ -91,31 +93,31 @@ class Command(BaseCommand):
 
                     # Save the sensor data
                     sensor_data = SensorData(
-                        user=user,
-                        monitoring_group=monitoring_group,
-                        temperature=data.get('temperature'),
-                        humidity=data.get('humidity'),
-                        methane=data.get('methane'),
-                        threshold=data.get('threshold'),
-                        ammonia=data.get('ammonia'),
-                        food_type=food_type,
-                        spoilage_status=spoilage_status,
-                        timestamp=timezone.now()
-                    )
+                    user=user,
+                    monitoring_group=monitoring_group,
+                    temperature=data.get('temperature'),
+                    humidity=data.get('humidity'),
+                    methane=data.get('methane'),
+                    threshold=data.get('threshold'),
+                    ammonia=data.get('ammonia'),
+                    food_type=food_type,
+                    spoilage_status=spoilage_status,
+                    timestamp=timezone.now(),
+                    # timestamp=timezone.now(),
+                    methane_status_message=data.get('methane_status_message', "Methane level is within safe limits."),  # Use data.get() to fetch Methane Status Message
+                    temperature_status_message=data.get('temperature_status_message', "Temperature is within the safe range."),  # Use data.get() to fetch Temperature Status Message
+                    storage_status_message=data.get('storage_status_message', "Food storage time is within the recommended duration.")  # Use data.get() to fetch Storage Status Message
+                )
                     sensor_data.save()
                     print(f"Saved sensor data for user {user.username} under monitoring group {monitoring_group.id}")
 
                     # Temperature and Humidity Warnings
-                    if spoilage_warning_temp != "Temperature is safe" or spoilage_warning_humidity != "Humidity is safe":
-                        print('sad')
+                    # If storage time exceeded and temperature time exceeded
+                    if spoilage_warning_temp == "Food at Risk Due to High Temperature":
+                        print('Food at risk due to high temp notification')
                         warning_message = ""
-
                         if spoilage_warning_temp != "Temperature is safe":
                             warning_message += f"Warning: {spoilage_warning_temp}. "
-                        
-                        if spoilage_warning_humidity != "Humidity is safe":
-                            warning_message += f"Warning: {spoilage_warning_humidity}."
-                        
                         # Check if a notification with the same user, monitoring group, and message already exists
                         if not Notification.objects.filter(
                             user=user,
@@ -141,12 +143,13 @@ class Command(BaseCommand):
                             print("Notification already exists, skipping publication.")
 
                     # If food is spoiled, update the monitoring group
+                    # add here the cause of spoilage
                     if spoilage_status == "food_is_spoiled":
                         monitoring_group.is_done = True
                         monitoring_group.end_time = timezone.now()
                         
                         if not monitoring_group.email_notification_sent:
-                            send_spoilage_notification(user, food_type, monitoring_group.id, monitoring_group.start_time, monitoring_group.end_time)
+                            # send_spoilage_notification(user, food_type, monitoring_group.id, monitoring_group.start_time, monitoring_group.end_time)
                             monitoring_group.email_notification_sent = True  
 
                         if not monitoring_group.phone_notification_sent:

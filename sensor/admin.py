@@ -1,6 +1,7 @@
 from django.contrib import admin
 from .models import SensorData, MonitoringGroup, Notification
 
+from django.utils.timezone import localtime
 
 class MonitoringGroupIDFilter(admin.SimpleListFilter):
     title = 'Monitoring Group ID'  # Display title for the filter in the admin panel
@@ -23,7 +24,7 @@ class MonitoringGroupIDFilter(admin.SimpleListFilter):
 class SensorDataAdmin(admin.ModelAdmin):
     list_display = (
         'id', 'user', 'get_monitoring_group_id', 'temperature', 'humidity',
-        'methane', 'ammonia', 'threshold', 'timestamp', 'food_type', 'display_spoilage_status'
+        'methane', 'ammonia', 'formatted_timestamp', 'food_type', 'display_spoilage_status'
     )
     list_filter = (
         'user', 'food_type', 'monitoring_group__is_done', 'timestamp',
@@ -38,7 +39,7 @@ class SensorDataAdmin(admin.ModelAdmin):
             'fields': ('user', 'monitoring_group')
         }),
         ('Sensor Readings', {
-            'fields': ('temperature', 'humidity', 'methane', 'threshold', 'ammonia', 'food_type', 'spoilage_status', 'timestamp')
+            'fields': ('temperature', 'humidity', 'methane', 'threshold', 'ammonia', 'food_type', 'spoilage_status','methane_status_message','temperature_status_message', 'storage_status_message','ammonia_status_message','timestamp')
         }),
     )
 
@@ -51,6 +52,13 @@ class SensorDataAdmin(admin.ModelAdmin):
         return obj.spoilage_status  # Explicitly returning spoilage_status value
 
     display_spoilage_status.short_description = 'Spoilage Status'
+
+    def formatted_timestamp(self, obj):
+    # Format the timestamp in MM/DD/YY HH:MM:SS AM/PM
+        return localtime(obj.timestamp).strftime('%m/%d/%y %I:%M:%S %p')
+
+
+    formatted_timestamp.short_description = 'Timestamp'  # Label for the column in the admin
 
 class MonitoringGroupAdmin(admin.ModelAdmin):
     list_display = ('id', 'user', 'food_type', 'start_time', 'end_time', 'is_done')

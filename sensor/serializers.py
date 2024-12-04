@@ -7,7 +7,11 @@ class SensorDataSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = SensorData
-        fields = ['id', 'temperature', 'humidity', 'methane', 'ammonia','threshold', 'timestamp', 'food_type', 'spoilage_status']
+        fields = [
+            'id', 'temperature', 'humidity', 'methane', 'ammonia', 'threshold',
+            'timestamp', 'food_type', 'spoilage_status',
+            'methane_status_message', 'temperature_status_message', 'storage_status_message'
+        ]
 
     def to_representation(self, instance):
         representation = super().to_representation(instance)
@@ -31,11 +35,14 @@ class SensorDataFormattedSerializer(serializers.ModelSerializer):
     formatted_timestamp = serializers.SerializerMethodField()
     spoilage_status = serializers.SerializerMethodField()
 
+
     class Meta:
         model = SensorData
         fields = [
-            'id', 'temperature', 'humidity', 'methane', 'ammonia','threshold', 
-            'formatted_timestamp', 'food_type', 'spoilage_status'
+            'id', 'temperature', 'humidity', 'methane', 'ammonia', 'threshold',
+            'formatted_timestamp', 'food_type', 'spoilage_status',
+            'methane_status_message', 'temperature_status_message', 'storage_status_message', 
+            'ammonia_status_message'
         ]
 
     def get_formatted_timestamp(self, obj):
@@ -46,6 +53,7 @@ class SensorDataFormattedSerializer(serializers.ModelSerializer):
     def get_spoilage_status(self, obj):
         # Get the human-readable value of the spoilage_status field
         return dict(SensorData.SPOILAGE_STATUS_CHOICES).get(obj.spoilage_status, obj.spoilage_status)
+
 
 class MonitoringGroupDetailSerializer(serializers.ModelSerializer):
     sensor_data = serializers.SerializerMethodField()

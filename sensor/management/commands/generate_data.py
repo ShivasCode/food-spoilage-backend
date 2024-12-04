@@ -1,72 +1,57 @@
+import csv
 from django.core.management.base import BaseCommand
-from datetime import timedelta
-from sensor.models import MonitoringGroup, SensorData
-import random
-from django.utils import timezone
+from sensor.models import SensorData  # Replace 'sensor' with the name of your app
+from datetime import datetime, timedelta
 
 class Command(BaseCommand):
-    help = 'Generates sensor data for a given MonitoringGroup'
+    help = 'Generate CSV files of SensorData at different intervals (timestamp and methane only)'
 
     def handle(self, *args, **kwargs):
-        # Retrieve the MonitoringGroup object
-        monitoring_group = MonitoringGroup.objects.get(id=517)
+        # Define the monitoring group ID
+        monitoring_group_id = 604
 
-        # Start and end times for the simulation
-        start_time = monitoring_group.start_time
-        end_time = monitoring_group.end_time if monitoring_group.end_time else timezone.now()
+        # Query SensorData for the specific monitoring group ID
+        sensor_data = SensorData.objects.filter(monitoring_group_id=monitoring_group_id).order_by('timestamp')
 
-        # Initial values for the sensor data
-        temperature_range = (29, 31)  # Unused as methane will trigger spoilage
-        humidity_range = (60, 75)  # Unused as methane will trigger spoilage
-        methane_max = 30
-        ammonia_range = (0.1, 0.5)
+        # Check if there is any data
+        if not sensor_data.exists():
+            self.stdout.write(self.style.WARNING(f'No data found for monitoring group ID {monitoring_group_id}'))
+            return
 
-        # Initialize methane value and spoilage flag
-        methane = 0
-        spoilage_triggered = False
-        current_time = start_time
+        # Define intervals in seconds
+        intervals = {
+            '10_seconds': 10,
+            '1_minute': 60,
+            '3_minutes': 180,
+            '5_minutes': 300,
+        }
 
-        # Simulate sensor data every 10 seconds between the start and end time
-        while current_time <= end_time:
-            # Gradually increase methane value until it reaches the max limit
-            methane = min(methane + random.uniform(0.1, 0.2), methane_max)
-            # Ensure methane has at most 2 decimal places
-            methane = round(methane, 2)
+        # Iterate through each interval
+        for interval_name, interval_seconds in intervals.items():
+            self.generate_csv(sensor_data, interval_name, interval_seconds, monitoring_group_id)
 
-            # Generate random values for temperature, humidity, and ammonia, all rounded to 2 decimals
-            temperature = round(random.uniform(*temperature_range), 2)
-            humidity = round(random.uniform(*humidity_range), 2)
-            ammonia = round(random.uniform(*ammonia_range), 2)
+    def generate_csv(self, sensor_data, interval_name, interval_seconds, monitoring_group_id):
+        # Define the file name with current timestamp and interval
+        filename = f"sensor_data_{interval_name}_group_{monitoring_group_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
 
-            # Determine spoilage status based only on methane
-            if methane >= 20:
-                spoilage_status = 'food_is_spoiled'
-                spoilage_triggered = True
-            else:
-                spoilage_status = 'food_is_fresh'
+        # Open the CSV file
+        with open(filename, 'w', newline='') as csvfile:
+            fieldnames = ['timestamp', 'methane']  # Only include timestamp and methane
 
-            # Create a SensorData object
-            SensorData.objects.create(
-                user=monitoring_group.user,
-                monitoring_group=monitoring_group,
-                temperature=temperature,
-                humidity=humidity,
-                methane=methane,
-                ammonia=ammonia,
-                spoilage_status=spoilage_status,
-                timestamp=current_time,
-                food_type=monitoring_group.food_type
-            )
+            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
 
-            # If spoilage is triggered, end the monitoring group and break the loop
-            if spoilage_triggered:
-                monitoring_group.is_done = True
-                monitoring_group.end_time = current_time
-                monitoring_group.save()
-                self.stdout.write(self.style.SUCCESS(f"Monitoring ended at {current_time}. Food is spoiled."))
-                break
+            # Write the header row
+            writer.writeheader()
 
-            # Increment the time by 10 seconds
-            current_time += timedelta(seconds=10)
+            # Write data rows at the specified interval
+            last_timestamp = None
+            for data in sensor_data:
+                if not last_timestamp or (data.timestamp - last_timestamp).total_seconds() >= interval_seconds:
+                    writer.writerow({
+                        'timestamp': data.timestamp,
+                        'methane': data.methane,
+                    })
+                    last_timestamp = data.timestamp
 
-        self.stdout.write(self.style.SUCCESS("Sensor data created successfully."))
+        # Provide feedback
+        self.stdout.write(self.style.SUCCESS(f'Generated CSV for {interval_name}: {filename}'))

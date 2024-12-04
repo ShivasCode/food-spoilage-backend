@@ -9,7 +9,8 @@ class MonitoringGroup(models.Model):
         ('menudo', 'Menudo'),
         ('adobo', 'Adobo'),
         ('mechado', 'Mechado'),
-        ('general', 'General')
+        ('general', 'General'),
+        ('bicol express', 'Bicol Express'),
     ]
     
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='monitoring_groups')
@@ -28,6 +29,7 @@ class SensorData(models.Model):
         ('menudo', 'Menudo'),
         ('adobo', 'Adobo'),
         ('mechado', 'Mechado'),
+        ('bicol', 'Bicol'),
     ]
 
     SPOILAGE_STATUS_CHOICES = [
@@ -38,15 +40,20 @@ class SensorData(models.Model):
     
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='user_sensor', null=True)
     monitoring_group = models.ForeignKey(MonitoringGroup, on_delete=models.CASCADE, related_name='sensor_data', null=True)
-    temperature = models.FloatField()
-    humidity = models.FloatField()
-    methane = models.FloatField()
-    ammonia = models.FloatField()
+    temperature = models.FloatField(blank=True,null=True, default=0.0)
+    humidity = models.FloatField(blank=True,null=True, default=0.0)
+    methane = models.FloatField(blank=True,null=True, default=0.0)
+    ammonia = models.FloatField(blank=True,null=True, default=0.0)
     threshold = models.IntegerField(null=True, blank=True)
-    timestamp = models.DateTimeField()
+    timestamp = models.DateTimeField(default=timezone.now)  # Default current time but can be manually overridden.
     food_type = models.CharField(max_length=50, choices=FOOD_CHOICES, null=True)
     spoilage_status = models.CharField(max_length=50, choices=SPOILAGE_STATUS_CHOICES, default='food_is_fresh')
     reason_of_spoilage = models.CharField(max_length=255, null=True, blank=True)
+    methane_status_message = models.CharField(max_length=255, null=True, blank=True)
+    temperature_status_message = models.CharField(max_length=255, null=True, blank=True)
+    storage_status_message = models.CharField(max_length=255, null=True, blank=True)
+    ammonia_status_message = models.CharField(max_length=255, null=True, blank=True)
+
     def __str__(self):
         # Access the monitoring group associated with this sensor data
         if self.monitoring_group:

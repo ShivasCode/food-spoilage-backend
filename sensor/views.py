@@ -38,7 +38,7 @@ class MonitoringGroupListView(generics.ListAPIView):
 
     def get_queryset(self):
         # Return only the monitoring groups for the authenticated user, ordered by latest start_time
-        return MonitoringGroup.objects.filter(user=self.request.user).order_by('-start_time')
+        return MonitoringGroup.objects.filter(user=self.request.user).order_by('start_time')
 
 class MonitoringGroupDetailView(generics.RetrieveAPIView):
     queryset = MonitoringGroup.objects.all()
@@ -77,11 +77,14 @@ class MonitoringGroupCSVExportView(generics.RetrieveAPIView):
             data = [{
                 'Timestamp': sd.timestamp.strftime("%B %d, %Y, %I:%M %p"),
                 'Temperature': sd.temperature,
-                'Humidity': sd.humidity,
                 'Methane': sd.methane,
-                'Threshold': sd.threshold,
+                'Ammonia': sd.ammonia,  # Added Ammonia
                 'Food Type': sd.food_type,
-                'Spoilage Status': sd.spoilage_status
+                'Spoilage Status': sd.spoilage_status,
+                'Methane Status Message': sd.methane_status_message,
+                'Temperature Status Message': sd.temperature_status_message,
+                'Storage Status Message': sd.storage_status_message,
+                'Ammonia Status Message': sd.ammonia_status_message,
             } for sd in sensor_data]
 
             # Create a DataFrame
@@ -112,7 +115,7 @@ class MonitoringGroupCSVExportView(generics.RetrieveAPIView):
             return Response({"error": "Monitoring group not found."}, status=404)
         except Exception as e:
             return Response({"error": str(e)}, status=500)
-        
+
 class NotificationUpdateView(generics.UpdateAPIView):
     model = Notification
     fields = ['read']  
